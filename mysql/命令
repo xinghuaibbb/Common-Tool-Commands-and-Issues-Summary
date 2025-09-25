@@ -1,0 +1,472 @@
+#### 密码
+
+> ##  命令解析
+>
+> ```
+> mysqladmin -u root -p
+> ```
+>
+> - **`mysqladmin`** → MySQL 管理工具程序
+> - **`-u root`** → 指定登录用户名为 `root`
+> - **`-p`** → 提示输入该用户的密码（执行时会要求你输入，而不是在命令行明文写）
+>
+> ------
+>
+> ## 🔹 常用用途示例
+>
+> ### 1. 修改密码
+>
+> ```
+> mysqladmin -u root -p password 'NewStrongPassword123!'
+> ```
+>
+> - 会提示输入当前密码，然后修改为新密码
+>
+> ### 2. 查看服务器状态
+>
+> ```
+> mysqladmin -u root -p status
+> ```
+>
+> ### 3. 查看进程列表
+>
+> ```
+> mysqladmin -u root -p processlist
+> ```
+>
+> ### 4. 重启 MySQL 服务
+>
+> ```
+> mysqladmin -u root -p reload
+> ```
+>
+> ------
+>
+> ## 🔹 总结
+>
+> - `mysqladmin` 是 **命令行管理工具**，适合脚本化或快速管理 MySQL
+> - `-u` 指定用户名，`-p` 表示安全地提示输入密码
+> - 常用操作包括：修改密码、创建数据库、查看状态、刷新权限等
+
+> ------
+>
+> ## 1️⃣ 使用 SQL 命令修改密码（MySQL 8.x）
+>
+> ### 修改当前用户密码
+>
+> ```sql
+> ALTER USER CURRENT_USER() IDENTIFIED BY 'new_password';
+> ```
+>
+> ### 修改指定用户密码
+>
+> ```sql
+> ALTER USER 'username'@'localhost' IDENTIFIED BY 'new_password';
+> ```
+>
+> ### 刷新权限（通常 ALTER USER 会自动生效）
+>
+> ```sql
+> FLUSH PRIVILEGES;
+> ```
+>
+> ------
+>
+> ## 2️⃣ 使用 `SET PASSWORD`（兼容 5.x）
+>
+> ```sql
+> SET PASSWORD FOR 'username'@'localhost' = PASSWORD('new_password');
+> ```
+>
+> ------
+>
+> ## 3️⃣ 使用命令行工具修改密码
+>
+> ### MySQL 8.x 推荐：
+>
+> ```bash
+> mysql -u root -p
+> ```
+>
+> 登录后：
+>
+> ```sql
+> ALTER USER 'root'@'localhost' IDENTIFIED BY 'NewStrongPassword123!';
+> ```
+>
+> ### MySQL 5.x：
+>
+> ```bash
+> mysqladmin -u root -p password 'NewStrongPassword123!'
+> ```
+>
+> - 会提示输入当前密码
+> - 执行后即修改成功
+>
+> ------
+>
+> ## 4️⃣ 注意事项
+>
+> 1. **确保账户存在**：
+>
+> ```sql
+> SELECT user, host FROM mysql.user;
+> ```
+>
+> 1. **密码安全性**：
+>    - 使用大小写字母、数字和特殊字符组合
+>    - 尽量长度 ≥ 12
+> 2. **远程访问用户**：
+>    - 修改 `'username'@'%'` 或 `'username'@'IP'` 的密码，确保远程连接可用
+> 3. **重启/刷新**：
+>    - MySQL 8.x ALTER USER 会立即生效
+>    - MySQL 5.x 需要 `FLUSH PRIVILEGES;`
+>
+> 
+
+#### 导入
+
+> ------
+>
+> ## 1️⃣ 使用 `mysql` 命令行导入
+>
+> ### 前提
+>
+> - 已经有目标数据库，如果没有先创建：
+>
+> ```sql
+> CREATE DATABASE db_name DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+> ```
+>
+> ### 导入 SQL 文件
+>
+> 假设备份文件为 `backup.sql`：
+>
+> ```bash
+> mysql -u username -p db_name < backup.sql
+> ```
+>
+> - `-u username` → 数据库用户名
+> - `-p` → 提示输入密码
+> - `db_name` → 要导入的数据库
+> - `< backup.sql` → 将文件内容导入数据库
+>
+> ------
+>
+> ## 2️⃣ 使用 `source` 命令导入（mysql 客户端内）
+>
+> 1. 登录 MySQL：
+>
+> ```bash
+> mysql -u username -p
+> ```
+>
+> 1. 切换数据库：
+>
+> ```sql
+> USE db_name;
+> ```
+>
+> 1. 导入 SQL 文件：
+>
+> ```sql
+> SOURCE /path/to/backup.sql;
+> ```
+>
+> - 注意路径必须是 MySQL 能访问的绝对路径或相对路径。
+>
+> ------
+>
+> ## 3️⃣ 注意事项
+>
+> 1. **字符集**
+>    - 如果 SQL 文件是 UTF-8，建议导入前设置数据库和客户端编码：
+>
+> ```sql
+> SET NAMES utf8mb4;
+> ```
+>
+> 1. **大文件导入**
+>    - 对大文件（几十 MB 或 GB），直接导入可能会超时：
+>
+> ```bash
+> mysql -u username -p --max_allowed_packet=512M db_name < backup.sql
+> ```
+>
+> 1. **权限**
+>    - 导入过程中确保用户有 `CREATE`, `INSERT`, `ALTER` 等权限，否则会失败。
+>
+> ------
+>
+> ## 4️⃣ 备份与恢复流程示例
+>
+> ### 备份
+>
+> ```bash
+> mysqldump -u root -p db_name > backup.sql
+> ```
+>
+> ### 恢复
+>
+> ```bash
+> mysql -u root -p db_name < backup.sql
+> ```
+>
+> ------
+
+#### CURD
+
+> ------
+>
+> ## 1️⃣ 数据库基本操作
+>
+> ### 查看数据库
+>
+> ```sql
+> SHOW DATABASES;
+> ```
+>
+> ### 创建数据库
+>
+> ```sql
+> CREATE DATABASE db_name DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+> ```
+>
+> ### 删除数据库
+>
+> ```sql
+> DROP DATABASE db_name;
+> ```
+>
+> ### 选择数据库
+>
+> ```sql
+> USE db_name;
+> ```
+>
+> ------
+>
+> ## 2️⃣ 数据表操作
+>
+> ### 查看数据表
+>
+> ```sql
+> SHOW TABLES;
+> ```
+>
+> ### 创建数据表
+>
+> ```sql
+> CREATE TABLE users (
+>     id INT AUTO_INCREMENT PRIMARY KEY,
+>     name VARCHAR(50) NOT NULL,
+>     email VARCHAR(100),
+>     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+> );
+> ```
+>
+> ### 删除数据表
+>
+> ```sql
+> DROP TABLE users;
+> ```
+>
+> ### 查看表结构
+>
+> ```sql
+> DESCRIBE users;
+> -- 或
+> SHOW COLUMNS FROM users;
+> ```
+>
+> ### 修改表
+>
+> ```sql
+> ALTER TABLE users ADD COLUMN age INT AFTER name;
+> ALTER TABLE users DROP COLUMN email;
+> ALTER TABLE users MODIFY COLUMN name VARCHAR(100) NOT NULL;
+> ALTER TABLE users CHANGE COLUMN age user_age INT;
+> ```
+>
+> ------
+>
+> ## 3️⃣ 数据增删改查（CRUD）
+>
+> ### 插入数据
+>
+> ```sql
+> INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com');
+> INSERT INTO users SET name='Bob', email='bob@example.com';
+> ```
+>
+> ### 查询数据
+>
+> ```sql
+> SELECT * FROM users;
+> SELECT name, email FROM users WHERE id = 1;
+> SELECT * FROM users ORDER BY created_at DESC;
+> SELECT * FROM users LIMIT 10 OFFSET 5;
+> SELECT COUNT(*) FROM users;
+> ```
+>
+> ### 更新数据
+>
+> ```sql
+> UPDATE users SET name='Alice Zhang' WHERE id=1;
+> UPDATE users SET email=NULL WHERE id=2;
+> ```
+>
+> ### 删除数据
+>
+> ```sql
+> DELETE FROM users WHERE id=1;
+> TRUNCATE TABLE users; -- 删除表内所有数据，重置自增
+> ```
+>
+> ------
+>
+> ## 4️⃣ 索引与约束
+>
+> ### 创建索引
+>
+> ```sql
+> CREATE INDEX idx_name ON users(name);
+> CREATE UNIQUE INDEX idx_email ON users(email);
+> ```
+>
+> ### 删除索引
+>
+> ```sql
+> DROP INDEX idx_name ON users;
+> ```
+>
+> ### 主外键约束
+>
+> ```sql
+> CREATE TABLE orders (
+>     order_id INT AUTO_INCREMENT PRIMARY KEY,
+>     user_id INT,
+>     amount DECIMAL(10,2),
+>     FOREIGN KEY (user_id) REFERENCES users(id)
+> );
+> ```
+>
+> ------
+>
+> ## 5️⃣ 用户与权限管理
+>
+> ### 创建用户
+>
+> ```sql
+> CREATE USER 'username'@'localhost' IDENTIFIED BY 'password';
+> ```
+>
+> ### 授权
+>
+> ```sql
+> GRANT ALL PRIVILEGES ON db_name.* TO 'username'@'localhost';
+> GRANT SELECT, INSERT ON db_name.users TO 'username'@'%';
+> FLUSH PRIVILEGES; -- 立即生效
+> ```
+>
+> ### 删除用户
+>
+> ```sql
+> DROP USER 'username'@'localhost';
+> ```
+>
+> ------
+>
+> ## 6️⃣ 数据库维护
+>
+> ### 查看当前连接
+>
+> ```sql
+> SHOW PROCESSLIST;
+> ```
+>
+> ### 查看表状态
+>
+> ```sql
+> SHOW TABLE STATUS LIKE 'users';
+> ```
+>
+> ### 检查表
+>
+> ```sql
+> CHECK TABLE users;
+> ```
+>
+> ### 修复表
+>
+> ```sql
+> REPAIR TABLE users;
+> ```
+>
+> ### 优化表
+>
+> ```sql
+> OPTIMIZE TABLE users;
+> ```
+>
+> ### 备份数据库
+>
+> ```bash
+> mysqldump -u root -p db_name > db_name.sql
+> ```
+>
+> ### 恢复数据库
+>
+> ```bash
+> mysql -u root -p db_name < db_name.sql
+> ```
+>
+> ------
+>
+> ## 7️⃣ 事务操作
+>
+> ```sql
+> START TRANSACTION;
+> UPDATE users SET name='Alice' WHERE id=1;
+> DELETE FROM orders WHERE order_id=10;
+> COMMIT;    -- 提交事务
+> ROLLBACK;  -- 回滚事务
+> ```
+>
+> ------
+>
+> ## 8️⃣ 高级查询技巧
+>
+> - 聚合函数：
+>
+> ```sql
+> SELECT COUNT(*), SUM(amount), AVG(amount), MAX(amount), MIN(amount) FROM orders;
+> ```
+>
+> - 分组：
+>
+> ```sql
+> SELECT user_id, COUNT(*) as order_count FROM orders GROUP BY user_id HAVING order_count > 1;
+> ```
+>
+> - 联表查询：
+>
+> ```sql
+> SELECT u.name, o.amount
+> FROM users u
+> JOIN orders o ON u.id = o.user_id
+> WHERE o.amount > 100;
+> ```
+>
+> - 子查询：
+>
+> ```sql
+> SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE amount>100);
+> ```
+>
+> - 模糊查询：
+>
+> ```sql
+> SELECT * FROM users WHERE name LIKE 'A%';
+> ```
+
